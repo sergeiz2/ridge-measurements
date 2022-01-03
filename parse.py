@@ -22,6 +22,10 @@ cursor = db.cursor()
 
 def find_radial(df):
 
+    global r3_ind
+    global r2_ind
+    global r1_ind
+
     try:
         r3_ind = df.iloc[:, 0].tolist().index('R3')
     
