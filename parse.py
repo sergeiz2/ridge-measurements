@@ -128,6 +128,11 @@ def find_sample_name(pathstr=None):
 
     return sample_name
 
+def merge_two_dicts(x, y):
+    z = x.copy()   # start with keys and values of x
+    z.update(y)    # modifies z with keys and values of y
+    return z
+
 def populate_index_tracker(name, radial_locs):
     query = "INSERT INTO index_tracker (sample_id, threadcr1_ind, flatcr1_ind, threadhr1_ind, flathr1_ind, threadtr1_ind, flattr1_ind, threadcr2_ind, flatcr2_ind, threadhr2_ind, flathr2_ind, threadtr2_ind, flattr2_ind, threadcr3_ind, flatcr3_ind, threadhr3_ind, flathr3_ind, threadtr3_ind, flattr3_ind) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     
