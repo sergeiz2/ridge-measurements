@@ -5,6 +5,9 @@ import numpy as np
 import mysql.connector as mysql
 import os
 import re
+from pandas.core.reshape.merge import merge
+
+from pandas.core.series import Series
 
 dir = os.getcwd() + '\CSVs'
 
@@ -44,6 +47,7 @@ def find_where_radial(first_col):
         "r2_index": r2_ind,
         "r3_index": r3_ind
     }
+    print(r_loc_dict)
 
     return r_loc_dict
 
@@ -116,6 +120,13 @@ def find_where_tf(first_col):
 
 def sort_locs(first_col):
 
+    merged = merge_dicts(find_where_radial(first_col), merge_dicts(find_where_cht(first_col), find_where_tf(first_col)))
+    merged_series = pd.Series(merged, name="LocationSeries")
+    
+    sorted = merged_series.sort_values(ascending=True)
+    print(sorted)
+    
+    return(sorted)
 
 def find_sample_name(pathstr=None):
     
@@ -129,7 +140,8 @@ def find_sample_name(pathstr=None):
 
     return sample_name
 
-def merge_two_dicts(x, y):
+def merge_dicts(x, y):
+    '''merges dictionaries x and y passed in params'''
     z = x.copy()   # start with keys and values of x
     z.update(y)    # modifies z with keys and values of y
     return z
