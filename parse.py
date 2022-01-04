@@ -127,6 +127,13 @@ def find_where_tf(first_col):
 
 def find_img_suffixes(first_col):
 
+    print(len(first_col))
+    print(range(len(first_col)))
+    
+    cleaned = [(idx, val) for idx, val in enumerate(first_col, 0) if not bool(re.search(r'(^\d+$)|(\b[^\d\W]+\b)', val))]
+
+    print(cleaned)
+
 
 def sort_locs(first_col):
 
@@ -143,7 +150,7 @@ def sort_locs(first_col):
     sorted = merged_series.sort_values(ascending=True)
     print(sorted)
     
-    return(sorted)
+    return sorted
 
 def find_sample_name(pathstr=None):
     
@@ -214,6 +221,7 @@ def clean_csvs_test():
     first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
     print(first_column)
     sort_locs(first_column)
+    find_img_suffixes(first_column)
     
 
 # clean_csvs()
