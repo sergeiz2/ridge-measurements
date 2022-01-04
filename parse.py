@@ -47,27 +47,23 @@ def find_where_radial():
 
     return r_loc_dict
 
+
 def find_where_cht():
     '''Find where center, head, tip'''
     
-    global center_loc_dict
-    global head_loc_dict
-    global tip_loc_dict
+    global cht_loc_dict
+    global first_col
     
     ctr_loc_vals = []
     head_loc_vals = []
     tip_loc_vals = []
-    ctr_loc_keys = ['ctrr1', 'ctrr2', 'ctrr3']
-    head_loc_vals = ['headr1', 'headr2', 'headr3']
-    tip_loc_vals = ['tipr1', 'tipr2', 'tipr3']
+    ctr_loc_keys = []
+    head_loc_keys = []
+    tip_loc_keys = []
 
     for i in range(len(first_col)):
         if bool(re.search('*center*|*middle*', first_col[i]):
             ctr_loc_vals.append(i)
-        for val in ctr_loc_vals:
-            if val < r_loc_dict.get("r2_index"):
-                temp = []
-                temp.append(val)
 
         if bool(re.search('*head*', first_col[i]):
             head_loc_vals.append(i)
@@ -76,14 +72,19 @@ def find_where_cht():
             tip_loc_vals.append(i)
 
     
+    for val in ctr_loc_vals ctr_loc_keys.append('center')
+    for val in head_loc_vals head_loc_keys.append('head')
+    for val in tip_loc_vals tip_loc_keys.append('tip')
+    
+    head_loc_keys.extend(tip_loc_keys)
+    head_loc_vals.extend(tip_loc_vals)
+    ctr_loc_keys.extend(head_loc_keys)
+    ctr_loc_vals.extend(head_loc_vals)
 
-    r_loc_dict = {
-        "r1_index": r1_ind,
-        "r2_index": r2_ind,
-        "r3_index": r3_ind
-    }
+    cht_loc_dict = dict(zip(ctr_loc_keys, ctr_loc_vals))
+    print(cht_loc_dict)
 
-    return r_loc_dict
+    return cht_loc_dict
 
     # 'R3'.casefold() in (str(val).casefold() for val in first_col))
 
