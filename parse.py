@@ -47,7 +47,8 @@ def find_where_radial(first_col):
         ("r2", r2_ind),
         ("r3", r3_ind)
     ]
-    print(r_loc_list)
+    
+    # print(r_loc_list)
 
     return r_loc_list
 
@@ -85,7 +86,8 @@ def find_where_cht(first_col):
     ctr_loc_vals.extend(head_loc_vals)
 
     cht_loc_list = list(zip(ctr_loc_keys, ctr_loc_vals))
-    print(cht_loc_list)
+    
+    # print(cht_loc_list)
 
     return cht_loc_list
 
@@ -109,30 +111,28 @@ def find_where_tf(first_col):
             flat_loc_vals.append(i)
             # print("added flat")
 
-    print("threads at: " + str(thread_loc_vals))
-    print("flats at: " + str(flat_loc_vals))
+    # print("threads at: " + str(thread_loc_vals))
+    # print("flats at: " + str(flat_loc_vals))
 
     for val in thread_loc_vals: thread_loc_keys.append('thread')
-    print(thread_loc_keys)
+    # print(thread_loc_keys)
     for val in flat_loc_vals: flat_loc_keys.append('flat')
-    print(flat_loc_keys)
+    # print(flat_loc_keys)
 
     thread_loc_keys.extend(flat_loc_keys)
     thread_loc_vals.extend(flat_loc_vals)
 
     tf_loc_list = list(zip(thread_loc_keys, thread_loc_vals))
-    print(tf_loc_list)
+    
+    # print(tf_loc_list)
     
     return tf_loc_list
 
 def find_where_img_suffixes(first_col):
-
-    print(len(first_col))
-    print(range(len(first_col)))
     
     cleaned = [(val, idx) for idx, val in enumerate(first_col, 0) if not bool(re.search(r'(^\d+$)|(\b[^\d\W]+\b)', val))]
 
-    print(cleaned)
+    # print(cleaned)
 
     return cleaned
 
@@ -146,11 +146,12 @@ def sort_locs(first_col):
     merged.extend(find_where_img_suffixes(first_col))
 
     idx, vals = zip(*merged)
-    print(vals)
+    # print(vals)
 
     merged_series = pd.Series(vals, idx, name="LocationSeries")
     
     sorted = merged_series.sort_values(ascending=True)
+    
     print(sorted)
     
     return sorted
@@ -216,7 +217,9 @@ def clean_csvs_test():
     data = pd.read_csv(pth)
 
     first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
-    print(first_column)
+    
+    # print(first_column)
+    
     sort_locs(first_column)
     
 
