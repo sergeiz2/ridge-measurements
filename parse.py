@@ -25,7 +25,7 @@ cursor = db.cursor()
 
 def find_where_radial(first_col):
 
-    global r_loc_dict
+    global r_loc_list
 
     try:
         r3_ind = first_col.index('r3')
@@ -42,20 +42,20 @@ def find_where_radial(first_col):
     except ValueError:
         r1_ind = 0
 
-    r_loc_dict = {
-        "r1_index": r1_ind,
-        "r2_index": r2_ind,
-        "r3_index": r3_ind
-    }
-    print(r_loc_dict)
+    r_loc_list = [
+        ("r1_index", r1_ind),
+        ("r2_index", r2_ind),
+        ("r3_index", r3_ind)
+    ]
+    print(r_loc_list)
 
-    return r_loc_dict
+    return r_loc_list
 
 
 def find_where_cht(first_col):
     '''Find where center, head, tip'''
     
-    global cht_loc_dict
+    global cht_loc_list
     
     ctr_loc_vals = []
     head_loc_vals = []
@@ -84,17 +84,17 @@ def find_where_cht(first_col):
     ctr_loc_keys.extend(head_loc_keys)
     ctr_loc_vals.extend(head_loc_vals)
 
-    cht_loc_dict = dict(zip(ctr_loc_keys, ctr_loc_vals))
-    print(cht_loc_dict)
+    cht_loc_list = list(zip(ctr_loc_keys, ctr_loc_vals))
+    print(cht_loc_list)
 
-    return cht_loc_dict
+    return cht_loc_list
 
     # 'R3'.casefold() in (str(val).casefold() for val in first_col))
 
 def find_where_tf(first_col):
     '''find where thread, flat'''
     
-    global tf_dict
+    global tf_loc_list
 
     thread_loc_vals = []
     thread_loc_keys = []
@@ -104,24 +104,41 @@ def find_where_tf(first_col):
     for i in range(len(first_col)):
         if bool(re.search(r'(thread)|(high)', first_col[i])):
             thread_loc_vals.append(i)
+            # print("added thread")
         if bool(re.search(r'(flat)|(low)', first_col[i])):
             flat_loc_vals.append(i)
+            # print("added flat")
+
+    print("threads at: " + str(thread_loc_vals))
+    print("flats at: " + str(flat_loc_vals))
 
     for val in thread_loc_vals: thread_loc_keys.append('thread')
+    print(thread_loc_keys)
     for val in flat_loc_vals: flat_loc_keys.append('flat')
+    print(flat_loc_keys)
 
     thread_loc_keys.extend(flat_loc_keys)
     thread_loc_vals.extend(flat_loc_vals)
 
-    tf_dict = dict(zip(thread_loc_keys, thread_loc_vals))
-    print(tf_dict)
+    tf_loc_list = list(zip(thread_loc_keys, thread_loc_vals))
+    print(tf_loc_list)
     
-    return tf_dict
+    return tf_loc_list
+
+def find_img_suffixes(first_col):
+
 
 def sort_locs(first_col):
 
-    merged = merge_dicts(find_where_radial(first_col), merge_dicts(find_where_cht(first_col), find_where_tf(first_col)))
-    merged_series = pd.Series(merged, name="LocationSeries")
+    merged = []
+    merged.extend(find_where_radial(first_col))
+    merged.extend(find_where_cht(first_col))
+    merged.extend(find_where_tf(first_col))
+
+    idx, vals = zip(*merged)
+    print(vals)
+
+    merged_series = pd.Series(vals, idx, name="LocationSeries")
     
     sorted = merged_series.sort_values(ascending=True)
     print(sorted)
@@ -133,7 +150,7 @@ def find_sample_name(pathstr=None):
     global sample_name
 
     try: 
-        sample_name = re.search('DIS_A([0-9][0-9])_([0-9][0-9])', pathstr).group()
+        sample_name = re.search('DIS_([A-Z][0-9][0-9])_([0-9][0-9])', pathstr).group()
         # print('Sample ' + sample_name)
     except AttributeError:
         pass
@@ -169,25 +186,36 @@ def populate_index_tracker(name, radial_locs):
 
 #     # if index 
 
-def clean_csvs():
+# def clean_csvs():
 
-    cursor.execute("DROP TABLE index_tracker")
-    cursor.execute("CREATE TABLE index_tracker (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, sample_id VARCHAR(15), threadcr1_ind SMALLINT, flatcr1_ind SMALLINT, threadhr1_ind SMALLINT, flathr1_ind SMALLINT, threadtr1_ind SMALLINT, flattr1_ind SMALLINT, threadcr2_ind SMALLINT, flatcr2_ind SMALLINT, threadhr2_ind SMALLINT, flathr2_ind SMALLINT, threadtr2_ind SMALLINT, flattr2_ind SMALLINT, threadcr3_ind SMALLINT, flatcr3_ind SMALLINT, threadhr3_ind SMALLINT, flathr3_ind SMALLINT, threadtr3_ind SMALLINT, flattr3_ind SMALLINT)")
+#     cursor.execute("DROP TABLE index_tracker")
+#     cursor.execute("CREATE TABLE index_tracker (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, sample_id VARCHAR(15), threadcr1_ind SMALLINT, flatcr1_ind SMALLINT, threadhr1_ind SMALLINT, flathr1_ind SMALLINT, threadtr1_ind SMALLINT, flattr1_ind SMALLINT, threadcr2_ind SMALLINT, flatcr2_ind SMALLINT, threadhr2_ind SMALLINT, flathr2_ind SMALLINT, threadtr2_ind SMALLINT, flattr2_ind SMALLINT, threadcr3_ind SMALLINT, flatcr3_ind SMALLINT, threadhr3_ind SMALLINT, flathr3_ind SMALLINT, threadtr3_ind SMALLINT, flattr3_ind SMALLINT)")
 
-    for file in os.scandir(dir):
-        pth = file.path
-        if 'DIS_A1' in pth:
-            find_sample_name(pth)
+#     for file in os.scandir(dir):
+#         pth = file.path
+#         if 'DIS_A1' in pth:
+#             find_sample_name(pth)
             
-            data = pd.read_csv(pth)
-        
+#             data = pd.read_csv(pth)
             
-        first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
-        sort_locs(first_column)
+#         first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
+#         sort_locs(first_column)
 
-        # populate_index_tracker(sample_name, r_loc_dict.values())
+#         # populate_index_tracker(sample_name, r_loc_dict.values())
 
-    # a = cursor.fetchall()
+#     # a = cursor.fetchall()
 
-clean_csvs()
+def clean_csvs_test():
+    pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T00_00.csv'
+    
+    find_sample_name(pth)
+    data = pd.read_csv(pth)
+
+    first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
+    print(first_column)
+    sort_locs(first_column)
+    
+
+# clean_csvs()
+clean_csvs_test()
 
