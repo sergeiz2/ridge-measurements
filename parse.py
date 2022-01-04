@@ -88,6 +88,34 @@ def find_where_cht():
 
     # 'R3'.casefold() in (str(val).casefold() for val in first_col))
 
+def find_where_tf():
+    '''find where thread, flat'''
+    
+    global first_col
+    global tf_dict
+
+    thread_loc_vals = []
+    thread_loc_keys = []
+    flat_loc_vals = []
+    flat_loc_keys = [] 
+
+    for i in range(len(first_col)):
+        if bool(re.search('*thread*|*high*', first_col[i]):
+            thread_loc_vals.append(i)
+        if bool(re.search('*flat*|*low*', first_col[i]):
+            flat_loc_vals.append(i)
+
+    for val in thread_loc_vals thread_loc_keys.append('thread')
+    for val in flat_loc_vals flat_loc_keys.append('flat')
+
+    thread_loc_keys.extend(flat_loc_keys)
+    thread_loc_vals.extend(flat_loc_vals)
+
+    tf_dict = dict(zip(ctr_loc_keys, ctr_loc_vals))
+    print(tf_dict)
+    
+    return tf_dict
+
 def find_sample_name(pathstr=None):
     
     global sample_name
