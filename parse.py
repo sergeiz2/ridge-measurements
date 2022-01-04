@@ -20,7 +20,7 @@ cursor = db.cursor()
 # cursor.execute("SHOW DATABASES")
 # print(cursor.fetchall())
 
-def find_where_radial():
+def find_where_radial(first_col):
 
     global r_loc_dict
 
@@ -48,11 +48,10 @@ def find_where_radial():
     return r_loc_dict
 
 
-def find_where_cht():
+def find_where_cht(first_col):
     '''Find where center, head, tip'''
     
     global cht_loc_dict
-    global first_col
     
     ctr_loc_vals = []
     head_loc_vals = []
@@ -88,10 +87,9 @@ def find_where_cht():
 
     # 'R3'.casefold() in (str(val).casefold() for val in first_col))
 
-def find_where_tf():
+def find_where_tf(first_col):
     '''find where thread, flat'''
     
-    global first_col
     global tf_dict
 
     thread_loc_vals = []
@@ -115,6 +113,9 @@ def find_where_tf():
     print(tf_dict)
     
     return tf_dict
+
+def sort_locs(first_col):
+
 
 def find_sample_name(pathstr=None):
     
@@ -146,19 +147,17 @@ def populate_index_tracker(name, radial_locs):
     db.commit()
 
 
-def lines_before(index, df):
-    '''checks if there are lines or images "higher up" or "earlier" in the file.'''
+# def lines_before(index, df):
+#     '''checks if there are lines or images "higher up" or "earlier" in the file.'''
     
-    first_col = pd.Series(first_col)
-    line_locs = first_col[first_col.str.match(r'^[1-9]\d*$')==True]
+#     first_col = pd.Series(first_col)
+#     line_locs = first_col[first_col.str.match(r'^[1-9]\d*$')==True]
 
-    print(line_locs)
+#     print(line_locs)
 
-    # if index 
+#     # if index 
 
 def clean_csvs():
-
-    global first_col
 
     cursor.execute("DROP TABLE index_tracker")
     cursor.execute("CREATE TABLE index_tracker (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, sample_id VARCHAR(15), threadcr1_ind SMALLINT, flatcr1_ind SMALLINT, threadhr1_ind SMALLINT, flathr1_ind SMALLINT, threadtr1_ind SMALLINT, flattr1_ind SMALLINT, threadcr2_ind SMALLINT, flatcr2_ind SMALLINT, threadhr2_ind SMALLINT, flathr2_ind SMALLINT, threadtr2_ind SMALLINT, flattr2_ind SMALLINT, threadcr3_ind SMALLINT, flatcr3_ind SMALLINT, threadhr3_ind SMALLINT, flathr3_ind SMALLINT, threadtr3_ind SMALLINT, flattr3_ind SMALLINT)")
@@ -171,8 +170,8 @@ def clean_csvs():
             data = pd.read_csv(pth)
         
             
-        first_col = [i.lower for i in data.iloc[:, 0].tolist()]
-        find_where_radial()
+        first_column = [i.lower for i in data.iloc[:, 0].tolist()]
+        sort_locs(first_column)
         # find_where_tch(data)
 
         populate_index_tracker(sample_name, r_loc_dict.values())
