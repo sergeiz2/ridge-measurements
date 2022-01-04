@@ -65,19 +65,19 @@ def find_where_cht(first_col):
     tip_loc_keys = []
 
     for i in range(len(first_col)):
-        if bool(re.search('*center*|*middle*', first_col[i]):
+        if bool(re.search(r'(center)|(middle)', first_col[i])):
             ctr_loc_vals.append(i)
 
-        if bool(re.search('*head*', first_col[i]):
+        if bool(re.search(r'(head)', first_col[i])):
             head_loc_vals.append(i)
         
-        if bool(re.search('*tip*', first_col[i]):
+        if bool(re.search(r'(tip)', first_col[i])):
             tip_loc_vals.append(i)
 
     
-    for val in ctr_loc_vals ctr_loc_keys.append('center')
-    for val in head_loc_vals head_loc_keys.append('head')
-    for val in tip_loc_vals tip_loc_keys.append('tip')
+    for val in ctr_loc_vals: ctr_loc_keys.append('center')
+    for val in head_loc_vals: head_loc_keys.append('head')
+    for val in tip_loc_vals: tip_loc_keys.append('tip')
     
     head_loc_keys.extend(tip_loc_keys)
     head_loc_vals.extend(tip_loc_vals)
@@ -102,18 +102,18 @@ def find_where_tf(first_col):
     flat_loc_keys = [] 
 
     for i in range(len(first_col)):
-        if bool(re.search('*thread*|*high*', first_col[i]):
+        if bool(re.search(r'(thread)|(high)', first_col[i])):
             thread_loc_vals.append(i)
-        if bool(re.search('*flat*|*low*', first_col[i]):
+        if bool(re.search(r'(flat)|(low)', first_col[i])):
             flat_loc_vals.append(i)
 
-    for val in thread_loc_vals thread_loc_keys.append('thread')
-    for val in flat_loc_vals flat_loc_keys.append('flat')
+    for val in thread_loc_vals: thread_loc_keys.append('thread')
+    for val in flat_loc_vals: flat_loc_keys.append('flat')
 
     thread_loc_keys.extend(flat_loc_keys)
     thread_loc_vals.extend(flat_loc_vals)
 
-    tf_dict = dict(zip(ctr_loc_keys, ctr_loc_vals))
+    tf_dict = dict(zip(thread_loc_keys, thread_loc_vals))
     print(tf_dict)
     
     return tf_dict
@@ -182,15 +182,12 @@ def clean_csvs():
             data = pd.read_csv(pth)
         
             
-        first_column = [i.lower for i in data.iloc[:, 0].tolist()]
+        first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
         sort_locs(first_column)
-        # find_where_tch(data)
 
-        populate_index_tracker(sample_name, r_loc_dict.values())
+        # populate_index_tracker(sample_name, r_loc_dict.values())
 
     # a = cursor.fetchall()
-
-    
 
 clean_csvs()
 
