@@ -43,9 +43,9 @@ def find_where_radial(first_col):
         r1_ind = 0
 
     r_loc_list = [
-        ("r1_index", r1_ind),
-        ("r2_index", r2_ind),
-        ("r3_index", r3_ind)
+        ("r1", r1_ind),
+        ("r2", r2_ind),
+        ("r3", r3_ind)
     ]
     print(r_loc_list)
 
@@ -125,14 +125,16 @@ def find_where_tf(first_col):
     
     return tf_loc_list
 
-def find_img_suffixes(first_col):
+def find_where_img_suffixes(first_col):
 
     print(len(first_col))
     print(range(len(first_col)))
     
-    cleaned = [(idx, val) for idx, val in enumerate(first_col, 0) if not bool(re.search(r'(^\d+$)|(\b[^\d\W]+\b)', val))]
+    cleaned = [(val, idx) for idx, val in enumerate(first_col, 0) if not bool(re.search(r'(^\d+$)|(\b[^\d\W]+\b)', val))]
 
     print(cleaned)
+
+    return cleaned
 
 
 def sort_locs(first_col):
@@ -141,6 +143,7 @@ def sort_locs(first_col):
     merged.extend(find_where_radial(first_col))
     merged.extend(find_where_cht(first_col))
     merged.extend(find_where_tf(first_col))
+    merged.extend(find_where_img_suffixes(first_col))
 
     idx, vals = zip(*merged)
     print(vals)
@@ -163,12 +166,6 @@ def find_sample_name(pathstr=None):
         pass
 
     return sample_name
-
-def merge_dicts(x, y):
-    '''merges dictionaries x and y passed in params'''
-    z = x.copy()   # start with keys and values of x
-    z.update(y)    # modifies z with keys and values of y
-    return z
 
 def populate_index_tracker(name, radial_locs):
     query = "INSERT INTO index_tracker (sample_id, threadcr1_ind, flatcr1_ind, threadhr1_ind, flathr1_ind, threadtr1_ind, flattr1_ind, threadcr2_ind, flatcr2_ind, threadhr2_ind, flathr2_ind, threadtr2_ind, flattr2_ind, threadcr3_ind, flatcr3_ind, threadhr3_ind, flathr3_ind, threadtr3_ind, flattr3_ind) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
@@ -221,7 +218,6 @@ def clean_csvs_test():
     first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
     print(first_column)
     sort_locs(first_column)
-    find_img_suffixes(first_column)
     
 
 # clean_csvs()
