@@ -169,7 +169,7 @@ def find_sample_name(pathstr=None):
     return sample_name
 
 def populate_mysql(cleaned, addl, samp_name):
-    query = "INSERT INTO PedicleScrewSummary (sample_id, fluence, dims, batch, image, radial_loc, linear_loc, thread_loc, line_count, line_len, line_ints, wavelength) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+    query = "INSERT INTO pedicle_screw_summary (sample_id, fluence, dims, batch, image, radial_loc, linear_loc, thread_loc, line_count, line_len, line_ints, wavelength) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     
     addl.drop([*range(0,11)], inplace=True)
     addl.drop(addl.columns[list(range(4, len(addl.columns)))], axis=1, inplace=True)
@@ -186,14 +186,16 @@ def populate_mysql(cleaned, addl, samp_name):
     ln_cnt = cleaned['line_count'].tolist()
     l = cleaned['l'].tolist()
     r = cleaned['r'].tolist()
-    wavelen = cleaned['l/r'].tolist()
+    wavelen = cleaned['l_over_r'].tolist()
 
-    values = (samp_name, flu, dims, bat, *imgs, *rad_locs, *lin_locs, *thr_locs, *ln_cnt, *l, *r, *wavelen)
+    values = [*zip(((samp_name, flu, dims, bat) for i in imgs), imgs, rad_locs, lin_locs, thr_locs, ln_cnt, l, r, wavelen)]
+    values = [(*x, i, ra, li, t, ln, l, r, w) for x, i, ra, li, t, ln, l, r, w in values]
+    # values = [np.nan_to_num(v, nan=-1) for v in values]
 
-    print(values)
+    # print(values)
 
-    cursor.execute(query, values)
-    
+    cursor.executemany(query, values)
+
     db.commit()
 
 def locate(line_idx, loc_data):
@@ -248,7 +250,13 @@ def reformat_data(df, loc_data, samp_name):
     mask = df[df.columns[0]].str.contains(regex)
     df = df[mask].rename(columns={df.columns[0]: 'line_count', df.columns[1]: 'l', df.columns[2]: 'r'})
     
-    df['l/r'] = df.apply(lambda div: float(div.l) / float(div.r), axis=1)
+    l_col = df['l'].tolist()
+    l_col = [float(l) for l in l_col]
+    r_col = df['r'].tolist()
+    r_col = [float(r) for r in r_col]
+    l_over_r_col = np.divide(l_col, r_col)
+
+    df['l_over_r'] = l_over_r_col
 
     df['sample_name'] = samp_name
 
@@ -273,11 +281,14 @@ def reformat_data(df, loc_data, samp_name):
 
 def clean_csvs():
 
-    cursor.execute("DROP TABLE index_tracker")
-    cursor.execute("CREATE TABLE index_tracker (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, sample_id VARCHAR(15), threadcr1_ind SMALLINT, flatcr1_ind SMALLINT, threadhr1_ind SMALLINT, flathr1_ind SMALLINT, threadtr1_ind SMALLINT, flattr1_ind SMALLINT, threadcr2_ind SMALLINT, flatcr2_ind SMALLINT, threadhr2_ind SMALLINT, flathr2_ind SMALLINT, threadtr2_ind SMALLINT, flattr2_ind SMALLINT, threadcr3_ind SMALLINT, flatcr3_ind SMALLINT, threadhr3_ind SMALLINT, flathr3_ind SMALLINT, threadtr3_ind SMALLINT, flattr3_ind SMALLINT)")
+    cursor.execute("DROP TABLE pedicle_screw_summary")
+    cursor.execute("CREATE TABLE pedicle_screw_summary (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, sample_id VARCHAR(15), fluence FLOAT(24), dims VARCHAR(15), batch VARCHAR(15), image VARCHAR(50), radial_loc VARCHAR(3), linear_loc VARCHAR(7), thread_loc VARCHAR(7), line_count SMALLINT, line_len FLOAT, line_ints SMALLINT, wavelength FLOAT(10))")
 
     for file in os.scandir(dir):
         pth = file.path
+        #TODO: Add try-catch
+        summary = pd.read_csv('C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\CSVs\\Ridge Measurements_Summary.csv')
+
         if 'DIS_A1' in pth:
             sample_name = find_sample_name(pth)
             
@@ -285,10 +296,7 @@ def clean_csvs():
             
             first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
             location_data = sort_locs(first_column)
-
-        if 'Summary' in pth:
-            summary = pd.read_csv(pth)
-        
+            
             populate_mysql(reformat_data(data, location_data, sample_name), summary, sample_name)
 
     # a = cursor.fetchall()
