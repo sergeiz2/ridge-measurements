@@ -168,15 +168,32 @@ def find_sample_name(pathstr=None):
 
     return sample_name
 
-def populate_mysql(clean, addl):
-    query = "INSERT INTO index_tracker (sample_id, fluence, dims, batch, image, radial_loc, linear_loc, thread_loc, line_count, line_len, line_ints, wavelength) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+def populate_mysql(cleaned, addl, samp_name):
+    query = "INSERT INTO PedicleScrewSummary (sample_id, fluence, dims, batch, image, radial_loc, linear_loc, thread_loc, line_count, line_len, line_ints, wavelength) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     
+    addl.drop([*range(0,11)], inplace=True)
+    addl.drop(addl.columns[list(range(4, len(addl.columns)))], axis=1, inplace=True)
     
-    values = (name, *radial_locs)
+    # print(addl)
 
-    # print(values)
+    flu = addl.loc[addl[addl.columns[2]] == samp_name, addl.columns[0]].iloc[0]
+    dims = addl.loc[addl[addl.columns[2]] == samp_name, addl.columns[1]].iloc[1]
+    bat = addl.loc[addl[addl.columns[2]] == samp_name, addl.columns[3]].iloc[3]
+    imgs = cleaned['image_name'].tolist()
+    rad_locs = cleaned['radial_loc'].tolist()
+    lin_locs = cleaned['linear_loc'].tolist()
+    thr_locs = cleaned['thread_loc'].tolist()
+    ln_cnt = cleaned['line_count'].tolist()
+    l = cleaned['l'].tolist()
+    r = cleaned['r'].tolist()
+    wavelen = cleaned['l/r'].tolist()
+
+    values = (samp_name, flu, dims, bat, *imgs, *rad_locs, *lin_locs, *thr_locs, *ln_cnt, *l, *r, *wavelen)
+
+    print(values)
 
     cursor.execute(query, values)
+    
     db.commit()
 
 def locate(line_idx, loc_data):
@@ -245,46 +262,53 @@ def reformat_data(df, loc_data, samp_name):
     loc_df = pd.DataFrame({'locs': dict_col})
     loc_df = pd.json_normalize(loc_df.locs)
     loc_df['line_idxs'] = line_idxs
+
     df = df.join(loc_df.set_index('line_idxs'))
     df.reset_index(drop=True, inplace=True)
+    
     print(df)
 
+    return df
 
-# def clean_csvs():
 
-#     cursor.execute("DROP TABLE index_tracker")
-#     cursor.execute("CREATE TABLE index_tracker (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, sample_id VARCHAR(15), threadcr1_ind SMALLINT, flatcr1_ind SMALLINT, threadhr1_ind SMALLINT, flathr1_ind SMALLINT, threadtr1_ind SMALLINT, flattr1_ind SMALLINT, threadcr2_ind SMALLINT, flatcr2_ind SMALLINT, threadhr2_ind SMALLINT, flathr2_ind SMALLINT, threadtr2_ind SMALLINT, flattr2_ind SMALLINT, threadcr3_ind SMALLINT, flatcr3_ind SMALLINT, threadhr3_ind SMALLINT, flathr3_ind SMALLINT, threadtr3_ind SMALLINT, flattr3_ind SMALLINT)")
+def clean_csvs():
 
-#     for file in os.scandir(dir):
-#         pth = file.path
-#         if 'DIS_A1' in pth:
-#             find_sample_name(pth)
+    cursor.execute("DROP TABLE index_tracker")
+    cursor.execute("CREATE TABLE index_tracker (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, sample_id VARCHAR(15), threadcr1_ind SMALLINT, flatcr1_ind SMALLINT, threadhr1_ind SMALLINT, flathr1_ind SMALLINT, threadtr1_ind SMALLINT, flattr1_ind SMALLINT, threadcr2_ind SMALLINT, flatcr2_ind SMALLINT, threadhr2_ind SMALLINT, flathr2_ind SMALLINT, threadtr2_ind SMALLINT, flattr2_ind SMALLINT, threadcr3_ind SMALLINT, flatcr3_ind SMALLINT, threadhr3_ind SMALLINT, flathr3_ind SMALLINT, threadtr3_ind SMALLINT, flattr3_ind SMALLINT)")
+
+    for file in os.scandir(dir):
+        pth = file.path
+        if 'DIS_A1' in pth:
+            sample_name = find_sample_name(pth)
             
-#             data = pd.read_csv(pth)
-
-#             remove_extra_cols(data)
+            data = pd.read_csv(pth)
             
-#         first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
-#         sort_locs(first_column)
+            first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
+            location_data = sort_locs(first_column)
 
-#         # populate_index_tracker(sample_name, r_loc_dict.values())
+        if 'Summary' in pth:
+            summary = pd.read_csv(pth)
+        
+            populate_mysql(reformat_data(data, location_data, sample_name), summary, sample_name)
 
-#     # a = cursor.fetchall()
+    # a = cursor.fetchall()
 
-def clean_csvs_test():
-    pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T00_00.csv'
+# def clean_csvs_test():
+#     pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T00_00.csv'
     
-    sample_name = find_sample_name(pth)
-    data = pd.read_csv(pth)
+#     sample_name = find_sample_name(pth)
+#     data = pd.read_csv(pth)
 
-    first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
+#     first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
     
-    # print(first_column)
+#     # print(first_column)
     
-    location_data = sort_locs(first_column)
-    reformat_data(data, location_data, sample_name)
+#     location_data = sort_locs(first_column)
+
+
+
     
 
-# clean_csvs()
-clean_csvs_test()
+clean_csvs()
+# clean_csvs_test()
 
