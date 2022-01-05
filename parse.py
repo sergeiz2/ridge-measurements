@@ -154,7 +154,7 @@ def sort_locs(first_col):
     
     sorted = merged_series.sort_values(ascending=True)
     
-    print(sorted)
+    # print(sorted)
     
     return sorted
 
@@ -168,9 +168,8 @@ def find_sample_name(pathstr=None):
 
     return sample_name
 
-def populate_index_tracker(name, radial_locs):
-    query = "INSERT INTO index_tracker (sample_id, threadcr1_ind, flatcr1_ind, threadhr1_ind, flathr1_ind, threadtr1_ind, flattr1_ind, threadcr2_ind, flatcr2_ind, threadhr2_ind, flathr2_ind, threadtr2_ind, flattr2_ind, threadcr3_ind, flatcr3_ind, threadhr3_ind, flathr3_ind, threadtr3_ind, flattr3_ind) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-    
+def populate_mysql(clean, addl):
+    query = "INSERT INTO index_tracker (sample_id, fluence, dims, batch, image, radial_loc, linear_loc, thread_loc, line_count, line_len, line_ints, wavelength) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
     
     
     values = (name, *radial_locs)
@@ -181,12 +180,13 @@ def populate_index_tracker(name, radial_locs):
     db.commit()
 
 def locate(line_idx, loc_data):
-    '''locates a line'''
+    '''locates a line and determines which image it belongs to'''
     
-    loc_dict = {
-        'radial': None,
-        'linear': None,
-        'thread': None
+    loc_img_dict = {
+        'image_name': None,
+        'radial_loc': None,
+        'linear_loc': None,
+        'thread_loc': None
     }
 
     for i in range(line_idx, -1, -1):
@@ -197,25 +197,29 @@ def locate(line_idx, loc_data):
 
         for loc in loc_name:
 
-            if re.match(r'\b(r[1-3])\b', loc) and loc_dict['radial'] == None:
-                loc_dict['radial'] = loc
-                print("radial set")
+            if re.match(r'\b(r[1-3])\b', loc) and loc_img_dict['radial_loc'] == None:
+                loc_img_dict['radial_loc'] = loc
+                # print("radial set")
 
-            if re.match(r'(\b(head)\b)|(\b(center)\b)|(\b(tip)\b)', loc) and loc_dict['linear'] == None:
-                loc_dict['linear'] = loc
-                print("linear set")
+            elif re.match(r'(\b(head)\b)|(\b(center)\b)|(\b(tip)\b)', loc) and loc_img_dict['linear_loc'] == None:
+                loc_img_dict['linear_loc'] = loc
+                # print("linear set")
 
-            if re.match(r'(\b(thread)\b)|(\b(flat)\b)', loc) and loc_dict['thread'] == None:
-                loc_dict['thread'] = loc
-                print("thread set")
+            elif re.match(r'(\b(thread)\b)|(\b(flat)\b)', loc) and loc_img_dict['thread_loc'] == None:
+                loc_img_dict['thread_loc'] = loc
+                # print("thread set")
+            
+            elif re.match(r'^(?!\s*$).+', loc) and loc_img_dict['image_name'] == None:
+                loc_img_dict['image_name'] = loc
+                # print("name set to " + loc)
 
-            if loc_dict['linear'] == None and loc_dict['thread'] != None and loc_dict['radial'] != None:
-                loc_dict['linear'] = 'center'
-                print("linear set to center")
+            if loc_img_dict['linear_loc'] == None and loc_img_dict['thread_loc'] != None and loc_img_dict['radial_loc'] != None:
+                loc_img_dict['linear_loc'] = 'center'
+                # print("linear set to center")
         
-    print('loc_dict: ' + str(loc_dict))
+    # print('loc_img_dict: ' + str(loc_img_dict))
 
-    return loc_dict
+    return loc_img_dict
 
 
 def reformat_data(df, loc_data, samp_name):
@@ -236,15 +240,14 @@ def reformat_data(df, loc_data, samp_name):
         dict_col.append(locate(idx, loc_data))
     
     line_idxs = df.index.tolist()
-    print(line_idxs)
+    # print(line_idxs)
 
     loc_df = pd.DataFrame({'locs': dict_col})
     loc_df = pd.json_normalize(loc_df.locs)
     loc_df['line_idxs'] = line_idxs
     df = df.join(loc_df.set_index('line_idxs'))
-    print('----------------------------------------')
+    df.reset_index(drop=True, inplace=True)
     print(df)
-    print('----------------------------------------')
 
 
 # def clean_csvs():
