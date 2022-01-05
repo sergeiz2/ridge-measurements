@@ -5,6 +5,8 @@ import numpy as np
 import mysql.connector as mysql
 import os
 import re
+from pandas.core.frame import DataFrame
+from pandas.core.indexes.base import Index
 from pandas.core.reshape.merge import merge
 
 from pandas.core.series import Series
@@ -157,8 +159,6 @@ def sort_locs(first_col):
     return sorted
 
 def find_sample_name(pathstr=None):
-    
-    global sample_name
 
     try: 
         sample_name = re.search('DIS_([A-Z][0-9][0-9])_([0-9][0-9])', pathstr).group()
@@ -180,16 +180,72 @@ def populate_index_tracker(name, radial_locs):
     cursor.execute(query, values)
     db.commit()
 
-
-# def lines_before(index, df):
-#     '''checks if there are lines or images "higher up" or "earlier" in the file.'''
+def locate(line_idx, loc_data):
+    '''locates a line'''
     
-#     first_col = pd.Series(first_col)
-#     line_locs = first_col[first_col.str.match(r'^[1-9]\d*$')==True]
+    loc_dict = {
+        'radial': None,
+        'linear': None,
+        'thread': None
+    }
 
-#     print(line_locs)
+    for i in range(line_idx, -1, -1):
 
-#     # if index 
+        loc_name = loc_data[loc_data == i].index.values.tolist()
+        
+        # print('loc_name list: ' + str(loc_name))
+
+        for loc in loc_name:
+
+            if re.match(r'\b(r[1-3])\b', loc) and loc_dict['radial'] == None:
+                loc_dict['radial'] = loc
+                print("radial set")
+
+            if re.match(r'(\b(head)\b)|(\b(center)\b)|(\b(tip)\b)', loc) and loc_dict['linear'] == None:
+                loc_dict['linear'] = loc
+                print("linear set")
+
+            if re.match(r'(\b(thread)\b)|(\b(flat)\b)', loc) and loc_dict['thread'] == None:
+                loc_dict['thread'] = loc
+                print("thread set")
+
+            if loc_dict['linear'] == None and loc_dict['thread'] != None and loc_dict['radial'] != None:
+                loc_dict['linear'] = 'center'
+                print("linear set to center")
+        
+    print('loc_dict: ' + str(loc_dict))
+
+    return loc_dict
+
+
+def reformat_data(df, loc_data, samp_name):
+    
+    df.drop(df.columns[list(range(1,6)) + [8]], axis=1, inplace=True)
+    df = df.fillna('')
+
+    regex = r'^[1-9]\d*$'
+    mask = df[df.columns[0]].str.contains(regex)
+    df = df[mask].rename(columns={df.columns[0]: 'line_count', df.columns[1]: 'l', df.columns[2]: 'r'})
+    
+    df['l/r'] = df.apply(lambda div: float(div.l) / float(div.r), axis=1)
+
+    df['sample_name'] = samp_name
+
+    dict_col = []
+    for idx in df.index.tolist():
+        dict_col.append(locate(idx, loc_data))
+    
+    line_idxs = df.index.tolist()
+    print(line_idxs)
+
+    loc_df = pd.DataFrame({'locs': dict_col})
+    loc_df = pd.json_normalize(loc_df.locs)
+    loc_df['line_idxs'] = line_idxs
+    df = df.join(loc_df.set_index('line_idxs'))
+    print('----------------------------------------')
+    print(df)
+    print('----------------------------------------')
+
 
 # def clean_csvs():
 
@@ -202,6 +258,8 @@ def populate_index_tracker(name, radial_locs):
 #             find_sample_name(pth)
             
 #             data = pd.read_csv(pth)
+
+#             remove_extra_cols(data)
             
 #         first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
 #         sort_locs(first_column)
@@ -213,14 +271,15 @@ def populate_index_tracker(name, radial_locs):
 def clean_csvs_test():
     pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T00_00.csv'
     
-    find_sample_name(pth)
+    sample_name = find_sample_name(pth)
     data = pd.read_csv(pth)
 
     first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
     
     # print(first_column)
     
-    sort_locs(first_column)
+    location_data = sort_locs(first_column)
+    reformat_data(data, location_data, sample_name)
     
 
 # clean_csvs()
