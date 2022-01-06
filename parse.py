@@ -10,6 +10,7 @@ from pandas.core.indexes.base import Index
 from pandas.core.reshape.merge import merge
 
 from pandas.core.series import Series
+import warnings
 
 dir = os.getcwd() + '\CSVs'
 
@@ -68,7 +69,7 @@ def find_where_cht(first_col):
     tip_loc_keys = []
 
     for i in range(len(first_col)):
-        if bool(re.search(r'(center)|(middle)', first_col[i])):
+        if bool(re.search(r'(center)|(middle)|(mid)', first_col[i])):
             ctr_loc_vals.append(i)
 
         if bool(re.search(r'(head)', first_col[i])):
@@ -243,26 +244,38 @@ def locate(line_idx, loc_data):
 
 def reformat_data(df, loc_data, samp_name):
     
-    df.drop(df.columns[list(range(1,6)) + [8]], axis=1, inplace=True)
+    df.drop(df.columns[list(range(1,6)) + list(range(8,len(df.columns)))], axis=1, inplace=True)
     df = df.fillna('')
 
     regex = r'^[1-9]\d*$'
     mask = df[df.columns[0]].str.contains(regex)
     df = df[mask].rename(columns={df.columns[0]: 'line_count', df.columns[1]: 'l', df.columns[2]: 'r'})
-    
-    l_col = df['l'].tolist()
-    l_col = [float(l) for l in l_col]
-    r_col = df['r'].tolist()
-    r_col = [float(r) for r in r_col]
-    l_over_r_col = np.divide(l_col, r_col)
-
-    df['l_over_r'] = l_over_r_col
+    df.dropna(axis=1, how='all', inplace=True)
+    df = df.astype(np.float_)
 
     df['sample_name'] = samp_name
 
     dict_col = []
     for idx in df.index.tolist():
-        dict_col.append(locate(idx, loc_data))
+        loc_dict = locate(idx, loc_data)
+        img_name = loc_dict.get('image_name') 
+
+        check_l = df.loc[idx, 'l']
+        if check_l < 10.0:
+            
+            def _small_warning(msg, *args, **kwargs):
+                return str(msg) + '\n'
+            warnings.formatwarning = _small_warning
+            
+            warnings.warn("Small value (" + str(check_l) + ") detected in sample " + str(samp_name) + ", image "
+                + str(img_name) + ". Assuming micrometers and multiplying by 1000...", SyntaxWarning)
+            
+            df.at[idx, 'l'] = check_l*1000
+            pass
+
+        dict_col.append(loc_dict)
+
+    df['l_over_r'] = df['l']/df['r']
     
     line_idxs = df.index.tolist()
     # print(line_idxs)
@@ -274,7 +287,8 @@ def reformat_data(df, loc_data, samp_name):
     df = df.join(loc_df.set_index('line_idxs'))
     df.reset_index(drop=True, inplace=True)
     
-    print(df)
+    # print(df)
+    print(samp_name)
 
     return df
 
@@ -301,20 +315,18 @@ def clean_csvs():
 
     # a = cursor.fetchall()
 
-# def clean_csvs_test():
-#     pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T00_00.csv'
+def clean_csvs_test():
+    pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T00_00.csv'
     
-#     sample_name = find_sample_name(pth)
-#     data = pd.read_csv(pth)
+    sample_name = find_sample_name(pth)
+    data = pd.read_csv(pth)
 
-#     first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
+    first_column = [str(i).lower() for i in data.iloc[:, 0].tolist()]
     
-#     # print(first_column)
+    # print(first_column)
     
-#     location_data = sort_locs(first_column)
-
-
-
+    location_data = sort_locs(first_column)
+    reformat_data(data, location_data, sample_name)
     
 
 clean_csvs()
