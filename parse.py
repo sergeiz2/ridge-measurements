@@ -26,6 +26,10 @@ cursor = db.cursor()
 # cursor.execute("SHOW DATABASES")
 # print(cursor.fetchall())
 
+def _small_warning(msg, *args, **kwargs):
+    return str(msg) + '\n'
+warnings.formatwarning = _small_warning
+
 def find_where_radial(first_col):
 
     global r_loc_list
@@ -54,7 +58,6 @@ def find_where_radial(first_col):
     # print(r_loc_list)
 
     return r_loc_list
-
 
 def find_where_cht(first_col):
     '''Find where center, head, tip'''
@@ -138,7 +141,6 @@ def find_where_img_suffixes(first_col):
     # print(cleaned)
 
     return cleaned
-
 
 def sort_locs(first_col):
 
@@ -241,37 +243,78 @@ def locate(line_idx, loc_data):
 
     return loc_img_dict
 
+def drop_bad_data(df):
+        
+        # df = df.replace(r'^\s*$', np.nan, regex=True, inplace=True)
+        # TODO: does this replace row if less than 3 non-na? That's what we need. 
+        df.dropna(axis=1, how='all', thresh=2, inplace=True)
+        df.dropna(axis=0, how='all', thresh=1, inplace=True)
+
+        drop_df = pd.DataFrame()
+        # TODO: CHECK IF DF PASSED by reference!!
+        col_count = len(df.columns)
+
+
+        def check_if_contains_numbers(ser):
+            thresh = 2
+            for i in ser.array:
+                ctr = 1
+                try:
+                    if re.match(r'^\d*?(([.,]\d)|(\d[.,])\d*?)?$', i):
+                        ctr += 1
+                        if ctr >= thresh:
+                            return ser
+                except TypeError:
+                    pass
+
+            return pd.Series()
+        
+        df.drop(df.columns[list(range(1,6)) + [8]], axis=1, inplace=True)
+        addl_drop = df.iloc[:, 3:col_count+1]
+        for _, s in addl_drop.iteritems():
+            drop_df = pd.concat([drop_df, check_if_contains_numbers(s)], axis=1, copy=False)
+
+        df.drop(addl_drop.columns, axis=1, inplace=True)
+
+        return drop_df
+
+def clean_text(df):
+    regex = r'^[1-9]\d*$'
+    mask = df[df.columns[0]].str.contains(regex).fillna(False)
+    return df[mask]
+
+def check_fix_small_val(df, row_id, samp_name, img_name, col_name='l'):
+    val = df.loc[row_id, col_name]
+    if val < 10.0: 
+        warnings.warn("Small value (" + str(val) + ") detected in sample " + 
+            str(samp_name) + ", image " + str(img_name) + 
+            ". Assuming micrometers and multiplying by 1000...", UserWarning)
+            
+        df.at[row_id, 'l'] = val*1000
 
 def reformat_data(df, loc_data, samp_name):
+
+    bad_data = drop_bad_data(df)
+    if bad_data.empty:
+        pass
+    else:
+        warnings.warn("Discarding the following data from sample " + str(samp_name) + 
+            "! Reformat CSVs appropriately if you'd like to include this data. \n\n" + 
+            bad_data.to_string())
     
-    df.drop(df.columns[list(range(1,6)) + list(range(8,len(df.columns)))], axis=1, inplace=True)
-    df = df.fillna('')
-
-    regex = r'^[1-9]\d*$'
-    mask = df[df.columns[0]].str.contains(regex)
-    df = df[mask].rename(columns={df.columns[0]: 'line_count', df.columns[1]: 'l', df.columns[2]: 'r'})
-    df.dropna(axis=1, how='all', inplace=True)
-    df = df.astype(np.float_)
-
+    df = clean_text(df)
+    df.rename(columns={df.columns[0]: 'line_count', df.columns[1]: 'l', df.columns[2]: 'r'}, inplace=True)
+    
+    # FIXME: fix the warning generated below. Read about views vs copies of df.
+    df = df.astype(float, copy=False)
+    
     df['sample_name'] = samp_name
 
     dict_col = []
     for idx in df.index.tolist():
         loc_dict = locate(idx, loc_data)
-        img_name = loc_dict.get('image_name') 
 
-        check_l = df.loc[idx, 'l']
-        if check_l < 10.0:
-            
-            def _small_warning(msg, *args, **kwargs):
-                return str(msg) + '\n'
-            warnings.formatwarning = _small_warning
-            
-            warnings.warn("Small value (" + str(check_l) + ") detected in sample " + str(samp_name) + ", image "
-                + str(img_name) + ". Assuming micrometers and multiplying by 1000...", SyntaxWarning)
-            
-            df.at[idx, 'l'] = check_l*1000
-            pass
+        check_fix_small_val(df, idx, samp_name, img_name=loc_dict.get('image_name'), col_name='l')
 
         dict_col.append(loc_dict)
 
@@ -291,7 +334,6 @@ def reformat_data(df, loc_data, samp_name):
     print(samp_name)
 
     return df
-
 
 def clean_csvs():
 
@@ -327,8 +369,6 @@ def clean_csvs_test():
     
     location_data = sort_locs(first_column)
     reformat_data(data, location_data, sample_name)
-    
 
 clean_csvs()
 # clean_csvs_test()
-
