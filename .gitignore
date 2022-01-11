@@ -129,4 +129,7 @@ dmypy.json
 .pyre/
 
 # Ridge Measurements Excel File
-Ridge\ Measurements*
+Ridge_Measurements/
+
+#CSVs
+CSVs/
