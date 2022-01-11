@@ -379,7 +379,7 @@ def clean_csvs():
     # a = cursor.fetchall()
 
 def clean_csvs_test():
-    pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T14_38.csv'
+    pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\Test_Files\\DIS_T14_38.csv'
     
     sample_name = find_sample_name(pth)
     data = pd.read_csv(pth)
