@@ -133,3 +133,6 @@ Ridge_Measurements/
 
 #CSVs
 CSVs/
+
+#VScode workspace settings
+*.code-workspace
