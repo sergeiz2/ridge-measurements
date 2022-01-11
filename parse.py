@@ -26,9 +26,24 @@ cursor = db.cursor()
 # cursor.execute("SHOW DATABASES")
 # print(cursor.fetchall())
 
+_warning = warnings.formatwarning
 def _small_warning(msg, *args, **kwargs):
+    warnings.formatwarning = _warning
     return str(msg) + '\n'
-warnings.formatwarning = _small_warning
+
+class BadFileError(RuntimeError):
+    '''Raised when the file being read and cleaned is improperly formatted.'''
+
+    def __init__(self, message, *args, **kwargs):
+        self.message = message
+        self.error_detail = args
+        self.error_values = kwargs
+        
+        # super().__init__(message)
+
+    def __str__(self):
+        str(self.message) 
+        "\n" + str(self.error_detail) + '\n' + str(self.error_values)
 
 def find_where_radial(first_col):
 
@@ -243,7 +258,7 @@ def locate(line_idx, loc_data):
 
     return loc_img_dict
 
-def drop_bad_data(df):
+def drop_bad_data(df, samp_name):
         
         # df = df.replace(r'^\s*$', np.nan, regex=True, inplace=True)
         # TODO: does this replace row if less than 3 non-na? That's what we need. 
@@ -267,10 +282,14 @@ def drop_bad_data(df):
                 except TypeError:
                     pass
 
-            return pd.Series()
+            return pd.Series(dtype=object)
         
-        df.drop(df.columns[list(range(1,6)) + [8]], axis=1, inplace=True)
-        addl_drop = df.iloc[:, 3:col_count+1]
+        try:
+            df.drop(df.columns[list(range(1,6)) + [8]], axis=1, inplace=True)
+            addl_drop = df.iloc[:, 3:col_count+1]
+        except IndexError:
+            raise BadFileError("The imputted CSV is formatted improperly or is empty!", "Please correct or remove this CSV and try again!", {"Filename": samp_name, "Data": df})
+
         for _, s in addl_drop.iteritems():
             drop_df = pd.concat([drop_df, check_if_contains_numbers(s)], axis=1, copy=False)
 
@@ -286,6 +305,7 @@ def clean_text(df):
 def check_fix_small_val(df, row_id, samp_name, img_name, col_name='l'):
     val = df.loc[row_id, col_name]
     if val < 10.0: 
+        warnings.formatwarning = _small_warning
         warnings.warn("Small value (" + str(val) + ") detected in sample " + 
             str(samp_name) + ", image " + str(img_name) + 
             ". Assuming micrometers and multiplying by 1000...", UserWarning)
@@ -294,10 +314,11 @@ def check_fix_small_val(df, row_id, samp_name, img_name, col_name='l'):
 
 def reformat_data(df, loc_data, samp_name):
 
-    bad_data = drop_bad_data(df)
+    bad_data = drop_bad_data(df, samp_name)
     if bad_data.empty:
         pass
     else:
+        warnings.formatwarning = _small_warning
         warnings.warn("Discarding the following data from sample " + str(samp_name) + 
             "! Reformat CSVs appropriately if you'd like to include this data. \n\n" + 
             bad_data.to_string())
@@ -343,7 +364,7 @@ def clean_csvs():
     for file in os.scandir(dir):
         pth = file.path
         #TODO: Add try-catch
-        summary = pd.read_csv('C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\CSVs\\Ridge Measurements_Summary.csv')
+        summary = pd.read_csv('C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\CSVs\\Summary.csv')
 
         if 'DIS_A1' in pth:
             sample_name = find_sample_name(pth)
@@ -358,7 +379,7 @@ def clean_csvs():
     # a = cursor.fetchall()
 
 def clean_csvs_test():
-    pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T00_00.csv'
+    pth = 'C:\\Users\\serge\\OneDrive\\Documents\\ridge-measurements-cleanup\\DIS_T14_38.csv'
     
     sample_name = find_sample_name(pth)
     data = pd.read_csv(pth)
