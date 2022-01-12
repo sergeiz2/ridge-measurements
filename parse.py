@@ -8,6 +8,7 @@ import re
 from pandas.core.frame import DataFrame
 from pandas.core.indexes.base import Index
 from pandas.core.reshape.merge import merge
+
 from pandas.core.series import Series
 import warnings
 
