@@ -22,10 +22,6 @@ db = mysql.connect(
 )
 cursor = db.cursor()
 
-# print(db)
-# cursor.execute("SHOW DATABASES")
-# print(cursor.fetchall())
-
 _warning = warnings.formatwarning
 def _small_warning(msg, *args, **kwargs):
     warnings.formatwarning = _warning
