@@ -354,6 +354,9 @@ def reformat_data(df, loc_data, samp_name):
 def clean_csvs():
 
     cursor.execute("DROP TABLE pedicle_screw_summary")
+    #FIXME: FLOAT is not an appropriate type for fluences. Use a VARCHAR!
+    #FIXME: FLOAT is not an appropriate type for line_len. Use a DOUBLE or a DECIMAL!
+    #FIXME: FLOAT is not an appropriate type for wavelength. Use a DOUBLE or a DECIMAL!
     cursor.execute("CREATE TABLE pedicle_screw_summary (id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY, sample_id VARCHAR(15), fluence FLOAT(24), dims VARCHAR(15), batch VARCHAR(15), image VARCHAR(50), radial_loc VARCHAR(3), linear_loc VARCHAR(7), thread_loc VARCHAR(7), line_count SMALLINT, line_len FLOAT, line_ints SMALLINT, wavelength FLOAT(10))")
 
     for file in os.scandir(dir):
