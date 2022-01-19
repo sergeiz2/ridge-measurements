@@ -2,14 +2,14 @@ CREATE TABLE "irrad_batch" (
   "id" SERIAL PRIMARY KEY NOT NULL,
   "name" varchar,
   "date" timestamptz NOT NULL DEFAULT (now()),
-  "tgt_fluence" "double precision" NOT NULL,
-  "avg_fluence" "double precision" NOT NULL,
+  "tgt_fluence" double precision NOT NULL,
+  "avg_fluence" double precision NOT NULL,
   "angle" real NOT NULL,
-  "base_press" "double precision" NOT NULL,
-  "op_press" "double precision" NOT NULL,
+  "base_press" double precision NOT NULL,
+  "op_press" double precision NOT NULL,
   "bm_volt" real NOT NULL,
   "start_curr" real NOT NULL,
-  "start_flux" "generated always as (end_curr * cos(angle) * 5006.1731) stored" NOT NULL,
+  "start_flux" GENERATED ALWAYS AS (end_curr * cos(angle) * 5006.1731) STORED,
   "end_curr" real NOT NULL,
   "time" real NOT NULL,
   "cath_curr" real NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE "sample" (
   "dimensions" varchar,
   "composition" varchar,
   "mfr_sample_id" varchar,
-  "batch" int
+  "batch" integer
 );
 
 CREATE TABLE "image" (
@@ -37,7 +37,7 @@ CREATE TABLE "image" (
   "radial_loc" varchar,
   "linear_loc" varchar,
   "thread_loc" varchar,
-  "sample_id" int,
+  "sample_id" integer,
   "img_data" varbinary,
   "path" varchar,
   "avg_wavelength" float,
@@ -46,14 +46,14 @@ CREATE TABLE "image" (
 
 CREATE TABLE "line_measurement" (
   "id" SERIAL NOT NULL,
-  "image_id" int,
+  "image_id" integer,
   "radial_loc" varchar,
   "linear_loc" varchar,
   "thread_loc" varchar,
-  "sample_id" int,
+  "sample_id" integer,
   "meas_by" varchar NOT NULL DEFAULT 'user',
   "length" float NOT NULL DEFAULT 0,
-  "intercepts" int NOT NULL,
+  "intercepts" integer NOT NULL,
   "unit" varchar NOT NULL DEFAULT 'nm',
   PRIMARY KEY ("id", "image_id", "radial_loc", "linear_loc", "thread_loc", "sample_id")
 );
