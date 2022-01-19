@@ -3,12 +3,12 @@ CREATE TABLE "irrad_batch" (
   "name" varchar,
   "date" timestamptz NOT NULL DEFAULT (now()),
   "angle" real NOT NULL,
-  "tgt_fluence" "double precision" NOT NULL,
+  "tgt_fluence" double precision NOT NULL,
   "duration" real NOT NULL,
-  "base_press" "double precision" NOT NULL,
+  "base_press" double precision NOT NULL,
   "start_curr" real NOT NULL,
-  "start_flux" "generated always as (end_curr * cos(angle) * 5006.1731) stored" NOT NULL,
-  "op_press" "double precision" NOT NULL,
+  "start_flux" generated always as (end_curr * cos(angle) * 5006.1731) stored NOT NULL,
+  "op_press" double precision NOT NULL,
   "bm_volt" real NOT NULL,
   "cath_curr" real NOT NULL,
   "disch_curr" real NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE "irrad_batch" (
   "nutr_emiss" real NOT NULL DEFAULT 0,
   "fil_curr" real NOT NULL DEFAULT 0,
   "end_curr" real NOT NULL,
-  "avg_fluence" "double precision" NOT NULL,
+  "avg_fluence" double precision NOT NULL,
   "misc" jsonb
 );
 
@@ -38,7 +38,6 @@ CREATE TABLE "image" (
   "linear_loc" varchar,
   "thread_loc" varchar,
   "sample_id" integer,
-  "img_data" varbinary,
   "path" varchar,
   "avg_wavelength" float,
   PRIMARY KEY ("id", "radial_loc", "linear_loc", "thread_loc", "sample_id")
