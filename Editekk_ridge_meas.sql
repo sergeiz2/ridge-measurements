@@ -3,11 +3,10 @@ CREATE TABLE "irrad_batch" (
   "name" varchar,
   "date" timestamptz NOT NULL DEFAULT (now()),
   "angle" real NOT NULL,
-  "tgt_fluence" double precision NOT NULL,
-  "duration" real NOT NULL,
+  "tgt_fluence" double precision NOT NULL, "duration" real NOT NULL,
   "base_press" double precision NOT NULL,
   "start_curr" real NOT NULL,
-  "start_flux" generated always as (end_curr * cos(angle) * 5006.1731) stored NOT NULL,
+  "start_flux" real GENERATED ALWAYS AS (end_curr * cos(angle) * 5006.1731) STORED NOT NULL,
   "op_press" double precision NOT NULL,
   "bm_volt" real NOT NULL,
   "cath_curr" real NOT NULL,
@@ -59,7 +58,7 @@ CREATE TABLE "line_measurement" (
 
 ALTER TABLE "sample" ADD FOREIGN KEY ("batch") REFERENCES "irrad_batch" ("id");
 
-ALTER TABLE "sample" ADD FOREIGN KEY ("edi_sample_id") REFERENCES "image" ("sample_id");
+ALTER TABLE "image" ADD FOREIGN KEY ("sample_id") REFERENCES "sample" ("edi_sample_id");
 
 ALTER TABLE "line_measurement" ADD FOREIGN KEY ("image_id", "radial_loc", "linear_loc", "thread_loc", "sample_id") REFERENCES "image" ("id", "radial_loc", "linear_loc", "thread_loc", "sample_id");
 
